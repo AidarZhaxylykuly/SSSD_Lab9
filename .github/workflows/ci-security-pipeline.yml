@@ -263,12 +263,11 @@ jobs:
         echo "- SpotBugs: spotbugs.xml" >> security-reports/SECURITY_SUMMARY.md
         echo "- PMD: pmd.xml" >> security-reports/SECURITY_SUMMARY.md
         echo "- OWASP: dependency-check-report.html" >> security-reports/SECURITY_SUMMARY.md
-
-- Build: ${{ needs.build.result }}
-- Tests: ${{ needs.test.result }}
-- SpotBugs: ${{ needs.spotbugs-analysis.result }}
-- PMD: ${{ needs.pmd-analysis.result }}
-- OWASP: ${{ needs.dependency-check.result }}
+        echo "" >> security-reports/SECURITY_SUMMARY.md
+        echo "## 📝 Notes" >> security-reports/SECURITY_SUMMARY.md
+        echo "- Reports are available for 30 days" >> security-reports/SECURITY_SUMMARY.md
+        echo "- Download artifacts from GitHub Actions interface" >> security-reports/SECURITY_SUMMARY.md
+        echo "- For OWASP report, open dependency-check-report.html in browser" >> security-reports/SECURITY_SUMMARY.md
 
 1. Review each security report
 2. Address critical and high severity issues first
