@@ -247,16 +247,15 @@ jobs:
     - name: Create security summary report
       run: |
         echo "Creating security summary..."
+        CURRENT_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
         cat > security-reports/SECURITY_SUMMARY.md << EOF
 
-**Generated:** ${{ date }}
+**Generated:** $CURRENT_DATE
 
-## Build Information
-- **Repository:** ${{ github.repository }}
-- **Branch:** ${{ github.ref_name }}
-- **Commit:** ${{ github.sha }}
-- **Pipeline:** ${{ github.run_id }}
-
+- **Repository:** $GITHUB_REPOSITORY
+- **Branch:** $GITHUB_REF
+- **Commit:** $GITHUB_SHA
+- **Pipeline:** $GITHUB_RUN_ID
 
 
 1. **SpotBugs Analysis**
