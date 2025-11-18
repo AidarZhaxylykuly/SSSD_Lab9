@@ -315,4 +315,3 @@ EOF
         echo "Build Status: ${{ needs.build.result }}"
         echo "Tests Status: ${{ needs.test.result }}"
         echo "Package Status: ${{ needs.package.result }}"
-	echo "Check the 'Artifacts' section to download reports"
