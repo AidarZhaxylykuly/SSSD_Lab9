@@ -112,6 +112,10 @@
                     <format>HTML</format>
                     <formats>HTML,JSON,XML</formats>
                     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                    <failOnError>false</failOnError>
+                    <cveValidForHours>24</cveValidForHours>
+                    <nvdApiKey></nvdApiKey>
+                    <nvdApiDelay>6500</nvdApiDelay>
                 </configuration>
             </plugin>
         </plugins>
