@@ -51,11 +51,11 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
 
-    - name: Run SpotBugs analysis
+    - name: Run Checkstyle analysis
       run: |
-        echo "=== Running SpotBugs Analysis ==="
-        mvn $MAVEN_CLI_OPTS spotbugs:spotbugs
-        echo "SpotBugs analysis completed"
+        echo "=== Running Checkstyle Analysis ==="
+        mvn $MAVEN_CLI_OPTS checkstyle:checkstyle
+        echo "Checkstyle analysis completed"
 
     - name: Run PMD analysis
       run: |
@@ -74,7 +74,7 @@ jobs:
       with:
         name: security-reports
         path: |
-          target/reports/spotbugs/
+          target/reports/checkstyle/
           target/reports/pmd/
           target/reports/dependency-check/
         retention-days: 30
