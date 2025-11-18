@@ -249,14 +249,15 @@ jobs:
         echo "Creating security summary..."
         CURRENT_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
         cat > security-reports/SECURITY_SUMMARY.md << EOF
+# Security Analysis Summary
 
 **Generated:** $CURRENT_DATE
 
+## Build Information
 - **Repository:** $GITHUB_REPOSITORY
-- **Branch:** $GITHUB_REF
-- **Commit:** $GITHUB_SHA
+- **Branch:** $GITHUB_REF_NAME
+- **Commit:** ${GITHUB_SHA:0:8}
 - **Pipeline:** $GITHUB_RUN_ID
-
 
 1. **SpotBugs Analysis**
    - Location: \`spotbugs/spotbugs.xml\`
