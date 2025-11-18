@@ -69,14 +69,39 @@ jobs:
         mvn $MAVEN_CLI_OPTS dependency-check:check
         echo "Dependency check completed"
 
+    - name: Collect and upload security reports
+      run: |
+        echo "=== Collecting Security Reports ==="
+        mkdir -p security-reports
+        
+        # Копируем отчеты если они существуют
+        if [ -d "target/checkstyle-result.xml" ]; then
+          cp target/checkstyle-result.xml security-reports/ || true
+        fi
+        
+        if [ -d "target/pmd.xml" ]; then
+          cp target/pmd.xml security-reports/ || true
+        fi
+        
+        if [ -d "target/site" ]; then
+          cp -r target/site/pmd.html security-reports/ || true
+          cp -r target/site/dependency-check.html security-reports/ || true
+        fi
+        
+        # Создаем summary
+        echo "# Security Analysis Report" > security-reports/SUMMARY.md
+        echo "Generated: $(date)" >> security-reports/SUMMARY.md
+        echo "" >> security-reports/SUMMARY.md
+        echo "## Available Reports:" >> security-reports/SUMMARY.md
+        echo "- Checkstyle: checkstyle-result.xml" >> security-reports/SUMMARY.md
+        echo "- PMD: pmd.xml" >> security-reports/SUMMARY.md
+        echo "- OWASP: dependency-check-report.html" >> security-reports/SUMMARY.md
+
     - name: Upload security reports
       uses: actions/upload-artifact@v4
       with:
         name: security-reports
-        path: |
-          target/reports/checkstyle/
-          target/reports/pmd/
-          target/reports/dependency-check/
+        path: security-reports/
         retention-days: 30
 
   package:
