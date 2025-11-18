@@ -249,7 +249,7 @@ jobs:
         echo "Creating security summary..."
         cat > security-reports/SECURITY_SUMMARY.md << EOF
 
-**Generated:** $(date)
+**Generated:** ${{ date }}
 
 ## Build Information
 - **Repository:** ${{ github.repository }}
