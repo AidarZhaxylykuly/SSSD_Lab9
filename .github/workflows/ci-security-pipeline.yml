@@ -1,0 +1,318 @@
+name: CI Security Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 6 * * 0'
+
+env:
+  MAVEN_OPTS: '-Dmaven.repo.local=${{ github.workspace }}/.m2/repository'
+  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      build-status: ${{ steps.build.outcome }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Build application
+      id: build
+      run: |
+        echo "=== Starting Build ==="
+        mvn $MAVEN_CLI_OPTS clean compile
+        echo "Build completed successfully!"
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: compiled-classes
+        path: target/classes/
+        retention-days: 1
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: compiled-classes
+        path: target/classes/
+
+    - name: Run unit tests
+      run: |
+        echo "=== Starting Tests ==="
+        mvn $MAVEN_CLI_OPTS test
+        echo "Tests completed!"
+        
+    - name: Upload test reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: |
+          target/surefire-reports/
+          target/failsafe-reports/
+        retention-days: 7
+        
+    - name: Publish Test Results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: JUnit Tests
+        path: target/surefire-reports/*.xml
+        reporter: java-junit
+
+  spotbugs-analysis:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: compiled-classes
+        path: target/classes/
+
+    - name: Run SpotBugs analysis
+      run: |
+        echo "=== Starting SpotBugs Analysis ==="
+        mvn $MAVEN_CLI_OPTS spotbugs:spotbugs
+        echo "SpotBugs analysis completed"
+        
+    - name: Check SpotBugs for issues
+      run: |
+        echo "Checking for SpotBugs issues..."
+        mvn $MAVEN_CLI_OPTS spotbugs:check || echo "SpotBugs found issues - check report"
+        
+    - name: Upload SpotBugs reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: spotbugs-reports
+        path: target/reports/spotbugs/
+        retention-days: 30
+
+  pmd-analysis:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: compiled-classes
+        path: target/classes/
+
+    - name: Run PMD analysis
+      run: |
+        echo "=== Starting PMD Analysis ==="
+        mvn $MAVEN_CLI_OPTS pmd:pmd
+        echo "PMD analysis completed"
+        
+    - name: Check PMD for violations
+      run: |
+        echo "Checking for PMD violations..."
+        mvn $MAVEN_CLI_OPTS pmd:check || echo "PMD found violations - check report"
+        
+    - name: Upload PMD reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: pmd-reports
+        path: target/reports/pmd/
+        retention-days: 30
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Run OWASP Dependency Check
+      run: |
+        echo "=== Starting OWASP Dependency Check ==="
+        mvn $MAVEN_CLI_OPTS org.owasp:dependency-check-maven:check
+        echo "Dependency check completed"
+        
+    - name: Upload OWASP reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: owasp-reports
+        path: target/reports/dependency-check/
+        retention-days: 30
+
+  package:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Create application package
+      run: |
+        echo "=== Creating Application Package ==="
+        mvn $MAVEN_CLI_OPTS package -DskipTests
+        echo "Package created successfully!"
+        ls -la target/*.jar
+        
+    - name: Upload application package
+      uses: actions/upload-artifact@v4
+      with:
+        name: application-jar
+        path: target/*.jar
+        retention-days: 7
+
+  security-reports:
+    runs-on: ubuntu-latest
+    needs: [spotbugs-analysis, pmd-analysis, dependency-check]
+    if: always()
+    steps:
+    - name: Download all security reports
+      run: |
+        echo "=== Collecting Security Reports ==="
+        mkdir -p security-reports
+        
+    - name: Download SpotBugs reports
+      uses: actions/download-artifact@v4
+      with:
+        name: spotbugs-reports
+        path: security-reports/spotbugs/
+
+    - name: Download PMD reports
+      uses: actions/download-artifact@v4
+      with:
+        name: pmd-reports
+        path: security-reports/pmd/
+
+    - name: Download OWASP reports
+      uses: actions/download-artifact@v4
+      with:
+        name: owasp-reports
+        path: security-reports/owasp/
+
+    - name: Create security summary report
+      run: |
+        echo "Creating security summary..."
+        cat > security-reports/SECURITY_SUMMARY.md << EOF
+
+**Generated:** $(date)
+
+## Build Information
+- **Repository:** ${{ github.repository }}
+- **Branch:** ${{ github.ref_name }}
+- **Commit:** ${{ github.sha }}
+- **Pipeline:** ${{ github.run_id }}
+
+
+
+1. **SpotBugs Analysis**
+   - Location: \`spotbugs/spotbugs.xml\`
+   - HTML Report: Convert using SpotBugs GUI or tools
+
+2. **PMD Analysis**
+   - Location: \`pmd/pmd.xml\`
+   - Rules violations and code quality issues
+
+
+3. **OWASP Dependency Check**
+   - HTML Report: \`owasp/dependency-check-report.html\`
+   - JSON Report: \`owasp/dependency-check-report.json\`
+   - XML Report: \`owasp/dependency-check-report.xml\`
+
+- Build: ${{ needs.build.result }}
+- Tests: ${{ needs.test.result }}
+- SpotBugs: ${{ needs.spotbugs-analysis.result }}
+- PMD: ${{ needs.pmd-analysis.result }}
+- OWASP: ${{ needs.dependency-check.result }}
+
+1. Review each security report
+2. Address critical and high severity issues first
+3. Fix code quality violations
+4. Update vulnerable dependencies
+5. Re-run pipeline after fixes
+
+- Reports are available for 30 days
+- Download artifacts from GitHub Actions interface
+- For OWASP report, open \`dependency-check-report.html\` in browser
+EOF
+
+        echo "Security summary created"
+        
+    - name: List collected reports
+      run: |
+        echo "=== Collected Security Reports ==="
+        find security-reports -type f | sort
+        
+    - name: Upload combined security reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports-combined
+        path: security-reports/
+        retention-days: 30
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build, test, package, security-reports]
+    if: always()
+    steps:
+    - name: Pipeline completion status
+      run: |
+        echo "CI Security Pipeline Completed"
+        echo "Build Status: ${{ needs.build.result }}"
+        echo "Tests Status: ${{ needs.test.result }}"
+        echo "Package Status: ${{ needs.package.result }}"
+	echo "Check the 'Artifacts' section to download reports"
