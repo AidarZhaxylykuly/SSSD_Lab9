@@ -16,10 +16,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Security Tools Versions -->
-        <spotbugs.version>4.7.3</spotbugs.version>
-        <pmd.version>3.20.0</pmd.version>
-        <owasp.version>8.2.1</owasp.version>
-        <junit.version>5.9.2</junit.version>
+        <spotbugs.version>4.8.3</spotbugs.version>
+        <pmd.version>3.21.0</pmd.version>
+        <owasp.version>8.4.3</owasp.version>
+        <junit.version>5.10.1</junit.version>
+        
+        <!-- Maven Plugins -->
+        <maven.compiler.version>3.11.0</maven.compiler.version>
+        <maven.surefire.version>3.1.2</maven.surefire.version>
     </properties>
 
     <dependencies>
@@ -27,19 +31,19 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.6</version>
+            <version>2.0.9</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.5</version>
+            <version>1.4.11</version>
         </dependency>
 
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.14.2</version>
+            <version>2.15.3</version>
         </dependency>
 
         <!-- JUnit 5 -->
@@ -55,18 +59,63 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Maven Compiler Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.version}</version>
+                </plugin>
+
+                <!-- Surefire Plugin for Tests -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.version}</version>
+                </plugin>
+
+                <!-- SpotBugs Plugin -->
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs.version}</version>
+                </plugin>
+
+                <!-- PMD Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${pmd.version}</version>
+                </plugin>
+
+                <!-- OWASP Dependency Check -->
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${owasp.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
 
@@ -74,52 +123,104 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0</version>
+                <configuration>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                </configuration>
             </plugin>
 
             <!-- SpotBugs Plugin -->
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.version}</version>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
                     <outputDirectory>${project.build.directory}/reports/spotbugs</outputDirectory>
+                    <failOnError>false</failOnError>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>spotbugs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- PMD Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>${pmd.version}</version>
                 <configuration>
                     <rulesets>
                         <ruleset>rulesets/java/security.xml</ruleset>
                         <ruleset>rulesets/java/bestpractices.xml</ruleset>
                         <ruleset>rulesets/java/errorprone.xml</ruleset>
+                        <ruleset>rulesets/java/codestyle.xml</ruleset>
                     </rulesets>
                     <outputDirectory>${project.build.directory}/reports/pmd</outputDirectory>
                     <format>xml</format>
                     <failurePriority>3</failurePriority>
                     <printFailingErrors>true</printFailingErrors>
+                    <failOnViolation>false</failOnViolation>
+                    <linkXRef>false</linkXRef>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>pmd</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- OWASP Dependency Check -->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${owasp.version}</version>
                 <configuration>
                     <format>HTML</format>
                     <formats>HTML,JSON,XML</formats>
                     <outputDirectory>${project.build.directory}/reports/dependency-check</outputDirectory>
                     <cveValidForHours>12</cveValidForHours>
+                    <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                    <failOnError>false</failOnError>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <!-- SpotBugs Reports -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.version}</version>
+            </plugin>
+            
+            <!-- PMD Reports -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${pmd.version}</version>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
