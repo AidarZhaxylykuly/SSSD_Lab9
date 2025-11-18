@@ -258,20 +258,11 @@ jobs:
         echo "- **Branch:** $GITHUB_REF_NAME" >> security-reports/SECURITY_SUMMARY.md
         echo "- **Commit:** ${GITHUB_SHA:0:8}" >> security-reports/SECURITY_SUMMARY.md
         echo "- **Pipeline:** $GITHUB_RUN_ID" >> security-reports/SECURITY_SUMMARY.md
-
-1. **SpotBugs Analysis**
-   - Location: \`spotbugs/spotbugs.xml\`
-   - HTML Report: Convert using SpotBugs GUI or tools
-
-2. **PMD Analysis**
-   - Location: \`pmd/pmd.xml\`
-   - Rules violations and code quality issues
-
-
-3. **OWASP Dependency Check**
-   - HTML Report: \`owasp/dependency-check-report.html\`
-   - JSON Report: \`owasp/dependency-check-report.json\`
-   - XML Report: \`owasp/dependency-check-report.xml\`
+        echo "" >> security-reports/SECURITY_SUMMARY.md
+        echo "## Security Reports Available:" >> security-reports/SECURITY_SUMMARY.md
+        echo "- SpotBugs: spotbugs.xml" >> security-reports/SECURITY_SUMMARY.md
+        echo "- PMD: pmd.xml" >> security-reports/SECURITY_SUMMARY.md
+        echo "- OWASP: dependency-check-report.html" >> security-reports/SECURITY_SUMMARY.md
 
 - Build: ${{ needs.build.result }}
 - Tests: ${{ needs.test.result }}
