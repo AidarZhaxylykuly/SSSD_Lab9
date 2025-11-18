@@ -264,22 +264,18 @@ jobs:
         echo "- PMD: pmd.xml" >> security-reports/SECURITY_SUMMARY.md
         echo "- OWASP: dependency-check-report.html" >> security-reports/SECURITY_SUMMARY.md
         echo "" >> security-reports/SECURITY_SUMMARY.md
-        echo "## 📝 Notes" >> security-reports/SECURITY_SUMMARY.md
+        echo "## Next Steps:" >> security-reports/SECURITY_SUMMARY.md
+        echo "1. Review each security report" >> security-reports/SECURITY_SUMMARY.md
+        echo "2. Address critical and high severity issues first" >> security-reports/SECURITY_SUMMARY.md
+        echo "3. Fix code quality violations" >> security-reports/SECURITY_SUMMARY.md
+        echo "4. Update vulnerable dependencies" >> security-reports/SECURITY_SUMMARY.md
+        echo "5. Re-run pipeline after fixes" >> security-reports/SECURITY_SUMMARY.md
+        echo "" >> security-reports/SECURITY_SUMMARY.md
+        echo "## Notes:" >> security-reports/SECURITY_SUMMARY.md
         echo "- Reports are available for 30 days" >> security-reports/SECURITY_SUMMARY.md
         echo "- Download artifacts from GitHub Actions interface" >> security-reports/SECURITY_SUMMARY.md
         echo "- For OWASP report, open dependency-check-report.html in browser" >> security-reports/SECURITY_SUMMARY.md
-
-1. Review each security report
-2. Address critical and high severity issues first
-3. Fix code quality violations
-4. Update vulnerable dependencies
-5. Re-run pipeline after fixes
-
-- Reports are available for 30 days
-- Download artifacts from GitHub Actions interface
-- For OWASP report, open \`dependency-check-report.html\` in browser
-EOF
-
+        
         echo "Security summary created"
         
     - name: List collected reports
@@ -301,7 +297,12 @@ EOF
     steps:
     - name: Pipeline completion status
       run: |
-        echo "CI Security Pipeline Completed"
+        echo "=== CI Security Pipeline Completed ==="
         echo "Build Status: ${{ needs.build.result }}"
         echo "Tests Status: ${{ needs.test.result }}"
         echo "Package Status: ${{ needs.package.result }}"
+        echo ""
+        echo "Security Analysis:"
+        echo "  - SpotBugs: ${{ needs.spotbugs-analysis.result }}"
+        echo "  - PMD: ${{ needs.pmd-analysis.result }}"
+        echo "  - OWASP: ${{ needs.dependency-check.result }}"
